@@ -11,13 +11,14 @@ init(autoreset=True)
 def main():
     opcion = ""
     try:
-        while opcion != "4":
+        while opcion != "5":
             bp()
             print(Fore.CYAN + Style.BRIGHT + "Menú de opciones:\n")
             print("1.- Descontar Mayoristas")
             print("2.- Descontar Canjes")
             print("3.- Descontar Mercado libre")
-            print("4.- Salir")
+            print("4.- Guardar Descuentos (Backup + Limpiar Plantilla)")
+            print("5.- Salir")
             opcion = input(Fore.CYAN + Style.BRIGHT + "\nSeleccione una opción: ").strip()
 
             match opcion:
@@ -28,6 +29,8 @@ def main():
                 case "3":
                     descontarMercado()
                 case "4":
+                    guardarDescuentos()
+                case "5":
                     print(Fore.RED + "\nsaliendo . . .")
                     time.sleep(2)
                     exit()
