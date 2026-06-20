@@ -1,5 +1,9 @@
-from src.helpers import borrarPantallas as bp
-from src.funciones import *
+try:
+    from src.helpers import borrarPantallas as bp
+    from src.funciones import *
+except ModuleNotFoundError:
+    from helpers import borrarPantallas as bp
+    from funciones import *
 import time
 from colorama import Fore, Style, init
 init(autoreset=True)
@@ -8,6 +12,7 @@ def main():
     opcion = ""
     try:
         while opcion != "4":
+            bp()
             print(Fore.CYAN + Style.BRIGHT + "Menú de opciones:\n")
             print("1.- Descontar Mayoristas")
             print("2.- Descontar Canjes")

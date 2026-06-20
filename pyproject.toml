@@ -6,8 +6,13 @@ authors = [
     {name = "Gregory Rodriguez",email = "glrd4726ml@gmail.com"}
 ]
 license = "MIT"
-requires-python = "yes"
+requires-python = ">=3.10"
 dependencies = [
+    "pandas",
+    "openpyxl",
+    "pdfplumber",
+    "colorama",
+    "xlrd"
 ]
 
 
