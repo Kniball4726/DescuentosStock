@@ -1,0 +1,16 @@
+[project]
+name = "descuentosstock"
+version = "0.1.0"
+description = "Programa para descontar pedidos mayoristas, mercado libre y canjes"
+authors = [
+    {name = "Gregory Rodriguez",email = "glrd4726ml@gmail.com"}
+]
+license = "MIT"
+requires-python = "yes"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
