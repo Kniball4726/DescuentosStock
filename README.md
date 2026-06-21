@@ -7,7 +7,7 @@ Estas instrucciones te permitirán obtener una copia del proyecto en funcionamie
 Prerrequisitos 📋
 
 1.- Instalar python desde la pagina oficial:
-
+https://www.python.org/
 Descarga de python
 2.- Verificar instalacion de python
 
