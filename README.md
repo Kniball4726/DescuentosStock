@@ -1,65 +1,102 @@
-Sistema de descuento Mayoristas, Canjes y Mercado libre
+# Sistema de descuento Mayoristas, Canjes y Mercado libre
 Automatización para el descuento de productos vendidos en Mayoristas, mercado libre y canjes)
 
-Comenzando 🚀
+## Comenzando 🚀
+
 Estas instrucciones te permitirán obtener una copia del proyecto en funcionamiento en tu máquina local para propósitos de desarrollo y pruebas.
 
 Prerrequisitos 📋
-
+  
+  - Instalación de Python
+  - Instalación de Visual Studio Code (VSC)
+  - Instalaciòn de gestor de paquetes (Poetry)
+  - Clonación de repositorio
+    
 1.- Instalar python desde la pagina oficial:
-https://www.python.org/
-Descarga de python
+
+[Descarga de python](https://www.python.org/)
+
 2.- Verificar instalacion de python
 
+````bash
   python --version
+````
+
 3.- Verificar la instalación del gestor de paquetes PIP
 
+```bash
   pip --version
+```
+
 4.- Instalación de editor de codigo Visual Studio Code
 
-Descarga de VSC
-Instalación local
+[Descarga de VSC](https://code.visualstudio.com/)
+
+5.- Instalación de Gestor de paquetes Poetry
+
+  - Desde una terminal powershell dentro de VSC ejecuta
+  
+```bash
+  (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py
+```
+
+  - Reinicia la aplicacón y ejecuta
+
+
+```bash
+  poetry --version
+```
+
+## Instalación local
+
 Abrir visual estudio code y abrir una terminal con Ctrl+Shift+ñ
 
-hacer un clon del repositorio
+  - Hacer un clon del repositorio:
 
-  git clone https://github.com/kniball4726/Python.git
-Desde el terminal entrar en la carpeta Python
+```bash[
+  git clone https://github.com/Kniball4726/DescuentosStock.git
+```
 
-  cd python
-Estando dentro del proyecto desde terminal se debe crear un entorno virtual
+  - Desde el terminal entrar en la carpeta DescuentosStock
 
-  python -m venv .venv
-Para activar el entorno virtual se debe entrar en la carpeta .venv/Scrips y correr Activate de la siguiente manera
+```bash
+  cd DescuentosStock
+```
 
-  cd .\.venv\Scripts\
-  .\activate
-Volvemos a la carpeta raiz de nuestro proyecto
+  - Ejecutar el siguiente comando
+  - Este comando instalara todas las dependencias del proyecto utilizadas en la programación
 
-  cd ../..
-Se deben instalar las dependencias utilizadas en el proyecto para que funciona de manera optima
+```bash
+  poetry install
+```
 
-  pip install -r requirements.txt
-para hacer un despliegue con ejecutable desde windows se debe usar:
+  - Crear ejecutable para uso en producción
 
-    pyinstaller --onefile app.py
-al correr este comando se crearan dos carpetas denominadas build y dist
+```bash
+  poetry run pyinstaller --onefile app.py
+```
 
-dentro de la carpeta dist encontraremos un archivo llamado app.exe
+  - Se genera una carpeta llamada "dist" dentro del proyecto, esta carpeta contiene un archivo llamada "app.exe", la cual va a se el ejecutable final para que use el usuario.
 
-este ejecutable de windows puede utilizarse directamente desde el escritorio de su pc otorgandole un acceso directo, se puede modificar el nombre y el icono
+## Forma de uso (Usuario final)
 
-Forma de uso
-Al ejecutar el Script por primera vez se van a crear dos carpetas junto al ejecutable las cuales tendran por nombre "Descontar" y "Descontados".
-Al crear estas carpetas se debe colocar el archivo a descontar con formato .docx dentro de la carpeta "Descontar" y se debe correr el script nuevamente.
-Se debe correr el Script una vez colocado el archivo y este va a analizar este archivo y va a crear una carpeta con el nombre de la fecha actual Ejemplo: "2026-05.02" y dentro de esta carpeta se va a crear un archivo llamado "Consolidado_(fecha actual).xlsx" siguiendo con el ejemplo "Consolidado_2026-05-02.xlsx".
-Una vez el Script realice el descuento informa a traves de consola y a su vez el archivo.docx pasa a la carpeta "Descontados".
-Si abrimos el archivo de excel "Consolidado_2026-05-02.xlsx" estara el descuento correspondiente de los productos señalados en el .docx indicando cantidad y productos.
-Cabe destacar que el descuento al hacerse una vez por fecha, no se podra hacer de nuevo ya que se generaria un conflicto de fechas, en caso de tener que hacer otro descuento se debera renombrar la carpeta generada con la fecha para poder asi hacer otro descuento del mismo día.
-Documentación
-En la carpeta raiz se encuentra un archivo llamado documentacion.py al ejecutar este archivo por terminal se observa la documentación completa de todas las funciones utilizadas en la aplicación
+  - Se debe colocar el archivo Plantilla.xlsx donde sea que coloque el ejecutable para que tenga un funcionamiento correcto.
+  
+  - Al ejecutar el Script por primera vez se van a crear cuatro carpetas junto al ejecutable las cuales tendran por nombre "Canjes", "Descontados", "Mayoristas" y "Mercado Libre".
+  
+  - Al crear estas carpetas se debe colocar el archivo a descontar con formato .pdf dentro de la carpeta "Mayoristas", Archivos de canjes con formato .xls o xlsx dentro de la carpeta "Canjes" y archivos .doc o .docx en la carpeta "Mercado Libre"
+  
+  - El programa va a desplegar un menú interactivo con cinco opciones:
+  
+      - Opción 1: Hace el descuento de todos los archivos .pdf de pedidos mayoristas cargados en la carpeta "Mayoristas" generando la carga de los productos dentro del archivo Plantilla.xlsx
+      - Opción 2: Hace el descuento de todos los archivos .xls o .xlsx correspondiente a los canjes cargados en la carpeta "Canjes" sumando los productos ya descontados de mayoristas en el archivo Plantilla.xlsx
+      - Opción 3: Hace el descuento de todos los archivos .doc o .docx de los pedidos de Mercado Libre cargados en la carpeta "Mercado Libre" sumando los productos ya descontados de mayoristas y canjes en el archivo Plantilla.xlsx
+      - Opción 4: Guardar descuento, es de vital importancia una vez terminado los descuentos hacer este paso para cerrar el proceso completo de manera eficiente, al ejecutar esta funcion, el programa hace un respaldo del descuento consolidado del dia dentro de la carpeta "Descuentos" con la fecha actual y formato .xlsx
+      - Opción 5: Salir del programa y finalizar, se cierra la consola interactiva.
+   
 
-Autor
-Gregory Rodriguez - Trabajo inicial, Desarrollo y documentación
+## Autor
 
-@kniball4726
+  Gregory Rodriguez - Trabajo inicial, Desarrollo y documentación
+
+- [@kniball4726](https://github.com/kniball4726)
