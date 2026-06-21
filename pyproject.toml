@@ -6,16 +6,22 @@ authors = [
     {name = "Gregory Rodriguez",email = "glrd4726ml@gmail.com"}
 ]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.16"
 dependencies = [
     "pandas",
     "openpyxl",
     "pdfplumber",
     "colorama",
-    "xlrd"
+    "xlrd",
+    "xlutils (>=2.0.0,<3.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pyinstaller (>=6.21.0,<7.0.0)"
+]

@@ -35,6 +35,6 @@ def main():
                     time.sleep(2)
                     exit()
     except KeyboardInterrupt:
-        print("\nSaliendo de la aplicación...")
+        print(Fore.RED +"\n\nSaliendo de la aplicación...")
     except Exception as e:
         print(f"\nOcurrió un error: {e}")
