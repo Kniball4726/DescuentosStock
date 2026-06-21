@@ -4,6 +4,7 @@ from xlutils.copy import copy
 import pandas as pd
 
 def set_cell_value_preserve_format(out_sheet, row, col, value):
+    """Mantiene la configuración original de las filas y columnas pre establecidas"""
     row_obj = out_sheet._Worksheet__rows.get(row)
     previous_cell = row_obj._Row__cells.get(col) if row_obj else None
     

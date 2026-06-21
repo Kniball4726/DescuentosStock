@@ -7,6 +7,7 @@ import xlrd
 import datetime
 from xlutils.copy import copy
 from colorama import Fore, Style
+
 try:
     from src.helpers import borrarPantallas as bp
 except ModuleNotFoundError:
@@ -99,6 +100,7 @@ def clear_missing_products_sheet(rb, wb):
         print(Fore.GREEN + "Pestaña 'No Encontrados' creada lista para el próximo ciclo.")
 
 def descontarMayoristas():
+    """Descuenta los archivos cargados en la carpeta Mayoristas"""
     bp()
     print(Fore.CYAN + Style.BRIGHT + "=== PROCESANDO PEDIDOS MAYORISTAS ===\n")
     
@@ -289,6 +291,7 @@ def descontarMayoristas():
     input(Fore.YELLOW + "\nPresione Enter para volver al menú...")
 
 def descontarCanjes():
+    """Descuenta los archivos colocados en la carpeta Canjes que tienen formato .xls o xlsx"""
     bp()
     print(Fore.CYAN + Style.BRIGHT + "=== PROCESANDO PEDIDOS CANJES ===\n")
     
@@ -492,6 +495,7 @@ def descontarMercado():
     time.sleep(2)
 
 def guardarDescuentos():
+    """Hace un respaldo del descuento en la carpeta Descuentos con la fecha actual y el formato .xlsx este suma los descuentos de mayoristas y canjes"""
     bp()
     print(Fore.CYAN + Style.BRIGHT + "=== GUARDAR DESCUENTOS ===\n")
 

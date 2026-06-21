@@ -5,6 +5,7 @@ import pandas as pd
 import datetime
 
 def update_missing_products_sheet(rb, wb, missing_products):
+    """Actualiza los productos que no estan en la lista Plantilla"""
     sheet_name = 'No Encontrados'
     sheet_names = rb.sheet_names()
     

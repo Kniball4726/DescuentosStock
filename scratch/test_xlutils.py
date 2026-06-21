@@ -3,6 +3,7 @@ import xlwt
 from xlutils.copy import copy
 
 def set_cell_value_preserve_format(out_sheet, row, col, value):
+    """Establece las formas de las celdas dentro del archivo Plantilla.xlsx"""
     # 1. Get the previous cell to extract its style index
     row_obj = out_sheet._Worksheet__rows.get(row)
     previous_cell = row_obj._Row__cells.get(col) if row_obj else None
