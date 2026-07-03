@@ -7,11 +7,7 @@ import xlrd
 import datetime
 from xlutils.copy import copy
 from colorama import Fore, Style
-
-try:
-    from src.helpers import borrarPantallas as bp
-except ModuleNotFoundError:
-    from helpers import borrarPantallas as bp
+from .helpers import borrarPantallas as bp
 
 def set_cell_value_preserve_format(out_sheet, row, col, value):
     """
@@ -247,15 +243,7 @@ def descontarMayoristas():
                 'file': file_origin
             })
 
-    # 4. Actualizar gran total en la fila de 'TOTAL UNIDADES'
-    total_row_mask = df_plantilla['CODIGO'].astype(str).str.strip().str.upper() == 'TOTAL UNIDADES'
-    if total_row_mask.any():
-        total_idx = df_plantilla[total_row_mask].index[0]
-        set_cell_value_preserve_format(sheet, total_idx + 1, col_descuento, total_descuento_unidades)
-        set_cell_value_preserve_format(sheet, total_idx + 1, col_productos, "TOTAL PRODUCTOS")
-        print(Fore.GREEN + f"Fila de 'TOTAL UNIDADES' actualizada con {total_descuento_unidades} unidades en Descuento y texto 'TOTAL PRODUCTOS'.")
-    else:
-        print(Fore.YELLOW + "Advertencia: No se encontró la fila 'TOTAL UNIDADES' en la plantilla.")
+    # 4. No actualizar la fila de total en la plantilla
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)
@@ -443,14 +431,7 @@ def descontarCanjes():
             except (ValueError, TypeError):
                 pass
 
-    total_row_mask = df_plantilla['CODIGO'].astype(str).str.strip().str.upper() == 'TOTAL UNIDADES'
-    if total_row_mask.any():
-        total_idx = df_plantilla[total_row_mask].index[0]
-        set_cell_value_preserve_format(sheet, total_idx + 1, col_descuento, suma_total_descuentos)
-        set_cell_value_preserve_format(sheet, total_idx + 1, col_productos, "TOTAL PRODUCTOS")
-        print(Fore.GREEN + f"Fila de 'TOTAL UNIDADES' actualizada con el gran total de {suma_total_descuentos} en Descuento.")
-    else:
-        print(Fore.YELLOW + "Advertencia: No se encontró la fila 'TOTAL UNIDADES' en la plantilla.")
+    # 4. No actualizar la fila de total en la plantilla
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)

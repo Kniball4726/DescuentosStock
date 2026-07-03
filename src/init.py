@@ -1,9 +1,5 @@
-try:
-    from src.helpers import borrarPantallas as bp
-    from src.funciones import *
-except ModuleNotFoundError:
-    from helpers import borrarPantallas as bp
-    from funciones import *
+from .helpers import borrarPantallas as bp
+from .funciones import *
 import time
 from colorama import Fore, Style, init
 init(autoreset=True)

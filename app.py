@@ -5,7 +5,6 @@ from src.init import main as iniciarAplicacion
 from colorama import Fore, Style, init
 init(autoreset=True)
 from src.helpers import borrarPantallas as bp
-from src.init import *
 
 CARPETAS_REQUERIDAS = ["Canjes", "Descuentos", "Mayoristas", "Mercado Libre"]
 

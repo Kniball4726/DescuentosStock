@@ -5,6 +5,8 @@ description = "Programa para descontar pedidos mayoristas, mercado libre y canje
 authors = [
     {name = "Gregory Rodriguez",email = "glrd4726ml@gmail.com"}
 ]
+package-mode = false
+
 license = "MIT"
 requires-python = ">=3.10,<3.16"
 dependencies = [
