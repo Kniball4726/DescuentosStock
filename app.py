@@ -6,7 +6,7 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 from src.helpers import borrarPantallas as bp
 
-CARPETAS_REQUERIDAS = ["Canjes", "Descuentos", "Mayoristas", "Mercado Libre"]
+CARPETAS_REQUERIDAS = ["Canjes", "Descuentos", "Descontados", "Mayoristas", "Mercado Libre"]
 
 def crear_carpetas():
     for carpeta in CARPETAS_REQUERIDAS:
@@ -16,12 +16,6 @@ def crear_carpetas():
 
 if __name__ == "__main__":
     try:
-        bp()
-        print(Fore.GREEN + Style.BRIGHT + "Iniciando aplicación...")
-        crear_carpetas()
-        time.sleep(2)
-        print(Fore.GREEN + Style.BRIGHT + "\nLa aplicación está ahora en ejecución.")
-        time.sleep(2)
         bp()
         iniciarAplicacion()
     except Exception:

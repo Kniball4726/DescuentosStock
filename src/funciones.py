@@ -9,6 +9,31 @@ from xlutils.copy import copy
 from colorama import Fore, Style
 from .helpers import borrarPantallas as bp
 
+
+def mover_archivos_a_descontados(source_folder, file_names, destino_folder="Descontados"):
+    """Mueve archivos procesados desde una carpeta fuente a una carpeta de salida."""
+    os.makedirs(destino_folder, exist_ok=True)
+
+    moved_files = []
+    for file_name in file_names:
+        source_path = os.path.join(source_folder, file_name)
+        if not os.path.exists(source_path):
+            continue
+
+        destination_path = os.path.join(destino_folder, file_name)
+        if os.path.exists(destination_path):
+            base_name, extension = os.path.splitext(file_name)
+            counter = 1
+            while os.path.exists(destination_path):
+                destination_path = os.path.join(destino_folder, f"{base_name}_{counter}{extension}")
+                counter += 1
+
+        shutil.move(source_path, destination_path)
+        moved_files.append(file_name)
+
+    return moved_files
+
+
 def set_cell_value_preserve_format(out_sheet, row, col, value):
     """
     Escribe un valor en una celda de un Worksheet de xlwt (de xlutils.copy)
@@ -254,6 +279,12 @@ def descontarMayoristas():
         wb.save(plantilla_path)
         print(Fore.GREEN + Style.BRIGHT + f"\n¡Éxito! Se actualizaron {descuentos_actualizados} productos en la columna 'Descuento'.")
         print(Fore.GREEN + f"Total de unidades descontadas: {total_descuento_unidades}")
+
+        moved_files = mover_archivos_a_descontados(folder, pdf_files)
+        if moved_files:
+            print(Fore.GREEN + f"Archivos movidos a la carpeta 'Descontados': {', '.join(moved_files)}")
+        else:
+            print(Fore.YELLOW + "No se movieron archivos a la carpeta 'Descontados'.")
     except PermissionError:
         print(Fore.RED + f"\n[ERROR] No se pudo guardar el archivo '{plantilla_path}'.")
         print(Fore.YELLOW + "El archivo está abierto en otro programa (como Excel) o está bloqueado. Ciérralo e intenta de nuevo.")
@@ -443,6 +474,12 @@ def descontarCanjes():
         print(Fore.GREEN + Style.BRIGHT + f"\n¡Éxito! Se procesaron {descuentos_actualizados} códigos de canjes coincidentes.")
         print(Fore.GREEN + f"Total de unidades agregadas por canjes: {total_descuento_canjes}")
         print(Fore.GREEN + f"Suma total actual en columna Descuento: {suma_total_descuentos}")
+
+        moved_files = mover_archivos_a_descontados(folder, excel_files)
+        if moved_files:
+            print(Fore.GREEN + f"Archivos movidos a la carpeta 'Descontados': {', '.join(moved_files)}")
+        else:
+            print(Fore.YELLOW + "No se movieron archivos a la carpeta 'Descontados'.")
     except PermissionError:
         print(Fore.RED + f"\n[ERROR] No se pudo guardar el archivo '{plantilla_path}'.")
         print(Fore.YELLOW + "El archivo está abierto en otro programa (como Excel) o está bloqueado. Ciérralo e intenta de nuevo.")
