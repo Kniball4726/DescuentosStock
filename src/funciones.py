@@ -10,6 +10,21 @@ from colorama import Fore, Style
 from .helpers import borrarPantallas as bp
 
 
+def normalize_header(value):
+    """Normaliza un nombre de columna para compararlo de forma robusta."""
+    return str(value).strip().lower().replace(" ", "")
+
+
+def get_column_name(columns, candidates, default=None):
+    """Devuelve el nombre real de una columna mediante comparación flexible."""
+    normalized_candidates = {normalize_header(candidate): candidate for candidate in candidates}
+    for col in columns:
+        normalized_col = normalize_header(col)
+        if normalized_col in normalized_candidates:
+            return col
+    return default
+
+
 def mover_archivos_a_descontados(source_folder, file_names, destino_folder="Descontados"):
     """Mueve archivos procesados desde una carpeta fuente a una carpeta de salida."""
     os.makedirs(destino_folder, exist_ok=True)
@@ -217,22 +232,28 @@ def descontarMayoristas():
 
     # Detectar dinámicamente el índice de las columnas Descuento y Productos
     r_sheet = rb.sheet_by_index(0)
-    headers = [str(val).strip().upper() for val in r_sheet.row_values(0)]
+    headers = [str(val).strip() for val in r_sheet.row_values(0)]
     
-    col_descuento = 4 # Valor por defecto
-    if 'DESCUENTO' in headers:
-        col_descuento = headers.index('DESCUENTO')
+    col_descuento = 4  # Valor por defecto
+    descuento_col_name = get_column_name(headers, ['DESCUENTO', 'Descuento', 'descuento'], None)
+    if descuento_col_name is not None:
+        col_descuento = headers.index(descuento_col_name)
     else:
         print(Fore.YELLOW + "Advertencia: No se encontró la columna 'Descuento' por nombre. Usando columna index 4 por defecto.")
         
-    col_productos = 2 # Valor por defecto
-    if 'PRODUCTOS' in headers:
-        col_productos = headers.index('PRODUCTOS')
+    col_productos = 2  # Valor por defecto
+    productos_col_name = get_column_name(headers, ['PRODUCTOS', 'Productos', 'productos'], None)
+    if productos_col_name is not None:
+        col_productos = headers.index(productos_col_name)
+
+    codigo_col_name = get_column_name(df_plantilla.columns.tolist(), ['CODIGO', 'Codigo', 'codigo'], None)
+    if codigo_col_name is None:
+        codigo_col_name = df_plantilla.columns[0]
 
     # Mapear códigos a índices de fila en pandas
     valid_codes = {}
     for idx, row in df_plantilla.iterrows():
-        code_val = row['CODIGO']
+        code_val = row[codigo_col_name]
         if pd.notna(code_val) and str(code_val).strip().upper() != 'TOTAL UNIDADES':
             try:
                 code_int = int(float(str(code_val).strip()))
@@ -348,7 +369,7 @@ def descontarCanjes():
     # code_int -> row_index
     valid_codes = {}
     for idx, row in df_plantilla.iterrows():
-        code_val = row['CODIGO']
+        code_val = row[codigo_col_name]
         if pd.notna(code_val) and str(code_val).strip().upper() != 'TOTAL UNIDADES':
             try:
                 code_int = int(float(str(code_val).strip()))
@@ -368,17 +389,26 @@ def descontarCanjes():
 
     # Detectar dinámicamente el índice de las columnas Descuento y Productos
     r_sheet = rb.sheet_by_index(0)
-    headers = [str(val).strip().upper() for val in r_sheet.row_values(0)]
+    headers = [str(val).strip() for val in r_sheet.row_values(0)]
     
-    col_descuento = 4 # Valor por defecto
-    if 'DESCUENTO' in headers:
-        col_descuento = headers.index('DESCUENTO')
+    col_descuento = 4  # Valor por defecto
+    descuento_col_name = get_column_name(headers, ['DESCUENTO', 'Descuento', 'descuento'], None)
+    if descuento_col_name is not None:
+        col_descuento = headers.index(descuento_col_name)
     else:
         print(Fore.YELLOW + "Advertencia: No se encontró la columna 'Descuento' por nombre. Usando columna index 4 por defecto.")
         
-    col_productos = 2 # Valor por defecto
-    if 'PRODUCTOS' in headers:
-        col_productos = headers.index('PRODUCTOS')
+    col_productos = 2  # Valor por defecto
+    productos_col_name = get_column_name(headers, ['PRODUCTOS', 'Productos', 'productos'], None)
+    if productos_col_name is not None:
+        col_productos = headers.index(productos_col_name)
+
+    codigo_col_name = get_column_name(df_plantilla.columns.tolist(), ['CODIGO', 'Codigo', 'codigo'], None)
+    if codigo_col_name is None:
+        codigo_col_name = df_plantilla.columns[0]
+    descuento_val_col_name = get_column_name(df_plantilla.columns.tolist(), ['DESCUENTO', 'Descuento', 'descuento'], None)
+    if descuento_val_col_name is None:
+        descuento_val_col_name = df_plantilla.columns[3] if len(df_plantilla.columns) > 3 else df_plantilla.columns[0]
 
     # 2. Procesar cada archivo de Canjes
     canjes_products = {}  # code_int -> accumulated_qty
@@ -439,13 +469,13 @@ def descontarCanjes():
 
     for code_int, qty in canjes_products.items():
         idx = valid_codes[code_int]
-        current_descuento = df_plantilla.at[idx, 'Descuento']
+        current_descuento = df_plantilla.at[idx, descuento_val_col_name]
         
         # Si es NaN o nulo, tratarlo como 0 para acumular correctamente
         base_descuento = float(current_descuento) if pd.notna(current_descuento) else 0.0
         new_val = base_descuento + qty
         set_cell_value_preserve_format(sheet, idx + 1, col_descuento, new_val)
-        df_plantilla.at[idx, 'Descuento'] = new_val
+        df_plantilla.at[idx, descuento_val_col_name] = new_val
         descuentos_actualizados += 1
         total_descuento_canjes += qty
 
@@ -455,7 +485,7 @@ def descontarCanjes():
         code_val = row['CODIGO']
         if pd.notna(code_val) and str(code_val).strip().upper() == 'TOTAL UNIDADES':
             continue
-        val = row['Descuento']
+        val = row[descuento_val_col_name]
         if pd.notna(val):
             try:
                 suma_total_descuentos += float(val)
