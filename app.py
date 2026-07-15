@@ -17,6 +17,7 @@ def crear_carpetas():
 if __name__ == "__main__":
     try:
         bp()
+        crear_carpetas()
         iniciarAplicacion()
     except Exception:
         tb = traceback.format_exc()

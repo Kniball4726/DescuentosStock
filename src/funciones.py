@@ -365,6 +365,10 @@ def descontarCanjes():
         input(Fore.YELLOW + "\nPresione Enter para volver al menú...")
         return
 
+    codigo_col_name = get_column_name(df_plantilla.columns.tolist(), ['CODIGO', 'Codigo', 'codigo'], None)
+    if codigo_col_name is None:
+        codigo_col_name = df_plantilla.columns[0]
+
     # Crear mapa de códigos válidos de la plantilla
     # code_int -> row_index
     valid_codes = {}
@@ -403,9 +407,6 @@ def descontarCanjes():
     if productos_col_name is not None:
         col_productos = headers.index(productos_col_name)
 
-    codigo_col_name = get_column_name(df_plantilla.columns.tolist(), ['CODIGO', 'Codigo', 'codigo'], None)
-    if codigo_col_name is None:
-        codigo_col_name = df_plantilla.columns[0]
     descuento_val_col_name = get_column_name(df_plantilla.columns.tolist(), ['DESCUENTO', 'Descuento', 'descuento'], None)
     if descuento_val_col_name is None:
         descuento_val_col_name = df_plantilla.columns[3] if len(df_plantilla.columns) > 3 else df_plantilla.columns[0]
