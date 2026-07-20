@@ -483,7 +483,7 @@ def descontarCanjes():
     # 4. Recalcular el gran total de la columna Descuento
     suma_total_descuentos = 0.0
     for idx, row in df_plantilla.iterrows():
-        code_val = row['CODIGO']
+        code_val = row[codigo_col_name]
         if pd.notna(code_val) and str(code_val).strip().upper() == 'TOTAL UNIDADES':
             continue
         val = row[descuento_val_col_name]
