@@ -1,98 +1,104 @@
-# Sistema de descuento Mayoristas, Canjes y Mercado libre
+# DescuentosStock
 
-Automatización para el descuento de productos vendidos en Mayoristas, mercado libre y canjes
+Sistema de escritorio para actualizar descuentos en una plantilla de Excel a partir de pedidos mayoristas, canjes y la opción de Mercado Libre desde un menú interactivo.
 
-## Comenzando 🚀
+## ¿Qué hace el sistema? 🚀
 
-Estas instrucciones te permitirán obtener una copia del proyecto en funcionamiento en tu máquina local para propósitos de desarrollo y pruebas.
+El programa permite:
 
-## Prerrequisitos 📋
+- leer archivos de pedidos desde carpetas específicas;
+- actualizar la columna de descuentos de una plantilla llamada Plantilla.xlsx;
+- mover los archivos ya procesados a la carpeta Descontados por fecha;
+- generar respaldos en la carpeta Descuentos;
+- registrar en una pestaña llamada No Encontrados los productos que no existen en la plantilla.
 
-- Instalación de Python
-- Instalación de Visual Studio Code (VSC)
-- Instalación de gestor de paquetes (Poetry)
-- Clonación de repositorio
+## Requisitos 📋
 
-1.- Instalar python desde la pagina oficial:
+- Python 3.10 a 3.15
+- Poetry
+- Microsoft Excel para abrir y editar la plantilla
+- Conexión a la red o acceso a los archivos que se van a procesar
 
-[Descarga de python](https://www.python.org/)
+## Dependencias principales
 
-2.- Verificar instalación de python
+El proyecto utiliza:
 
-```bash
-  python --version
-```
-
-3.- Verificar la instalación del gestor de paquetes PIP
-
-```bash
-  pip --version
-```
-
-4.- Instalación de editor de codigo Visual Studio Code
-
-[Descarga de VSC](https://code.visualstudio.com/)
-
-5.- Instalación de Gestor de paquetes Poetry
-
-- Desde una terminal powershell dentro de VSC ejecuta
-
-```bash
-  (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py
-```
-
-- Reinicia la aplicacón y ejecuta
-
-```bash
-  poetry --version
-```
+- pandas
+- openpyxl
+- pdfplumber
+- colorama
+- xlrd
+- xlutils
 
 ## Instalación local
 
-Abrir visual estudio code y abrir una terminal con Ctrl+Shift+ñ
-
-- Hacer un clon del repositorio:
+1. Clonar el repositorio:
 
 ```bash
-  git clone https://github.com/Kniball4726/DescuentosStock.git
+git clone https://github.com/Kniball4726/DescuentosStock.git
 ```
 
-- Desde el terminal entrar en la carpeta DescuentosStock
+2. Ingresar a la carpeta del proyecto:
 
 ```bash
-  cd DescuentosStock
+cd DescuentosStock
 ```
 
-- Ejecutar el siguiente comando
-- Este comando instalara todas las dependencias del proyecto utilizadas en la programación
+3. Instalar dependencias:
 
 ```bash
-  poetry install
+poetry install
 ```
 
-- Crear ejecutable para uso en producción
+4. Colocar la plantilla base en la raíz del proyecto con el nombre Plantilla.xlsx.
+
+5. Ejecutar la aplicación:
 
 ```bash
-  poetry run pyinstaller --onefile app.py
+poetry run python app.py
 ```
 
-- Se genera una carpeta llamada "dist" dentro del proyecto, esta carpeta contiene un archivo llamado "app.exe", el cual va a ser el ejecutable final para que use el usuario.
+## Estructura esperada del sistema
 
-## Forma de uso (Usuario final)
+Al ejecutar la aplicación por primera vez, se crean automáticamente las carpetas:
 
-- Se debe colocar el archivo Plantilla.xlsx donde sea que coloque el ejecutable para que tenga un funcionamiento correcto.
-- Al ejecutar el Script por primera vez se van a crear cuatro carpetas junto al ejecutable las cuales tendrán por nombre "Canjes", "Descuentos", "Mayoristas" y "Mercado Libre".
-- Al crear estas carpetas se debe colocar el archivo a descontar con formato .pdf dentro de la carpeta "Mayoristas", Archivos de canjes con formato .xls o xlsx dentro de la carpeta "Canjes" y archivos .doc o .docx en la carpeta "Mercado Libre"
-- El programa va a desplegar un menú interactivo con cinco opciones:
+- Canjes
+- Descuentos
+- Descontados
+- Mayoristas
+- Mercado Libre
 
-  - Opción 1: Hace el descuento de todos los archivos .pdf de pedidos mayoristas cargados en la carpeta "Mayoristas" generando la carga de los productos dentro del archivo Plantilla.xlsx
-  - Opción 2: Hace el descuento de todos los archivos .xls o .xlsx correspondiente a los canjes cargados en la carpeta "Canjes" sumando los productos ya descontados de mayoristas en el archivo Plantilla.xlsx
-  - Opción 3: Hace el descuento de todos los archivos .doc o .docx de los pedidos de Mercado Libre cargados en la carpeta "Mercado Libre" sumando los productos ya descontados de mayoristas y canjes en el archivo Plantilla.xlsx
-  - Opción 4: Guardar descuento, es de vital importancia una vez terminado los descuentos hacer este paso para cerrar el proceso completo de manera eficiente, al ejecutar esta funcion, el programa hace un respaldo del descuento consolidado del dia dentro de la carpeta "Descuentos" con la fecha actual y formato .xlsx
-  - Opción 5: Salir del programa y finalizar, se cierra la consola interactiva.
+Además, el proceso espera los siguientes archivos:
+
+- Mayoristas: archivos PDF
+- Canjes: archivos Excel (.xlsx)
+- Mercado Libre: archivos compatibles con la opción del menú, aunque su procesamiento no está activo en la versión actual
+- Plantilla.xlsx: archivo base donde se registran los descuentos
+
+## Flujo de uso
+
+1. Colocar los archivos a procesar en las carpetas correspondientes.
+2. Ejecutar la aplicación.
+3. Elegir una opción del menú:
+   - 1. Descontar Mayoristas: procesa los PDFs y actualiza los descuentos en la plantilla.
+   - 2. Descontar Canjes: procesa los archivos Excel de canjes y suma las cantidades sobre la plantilla.
+   - 3. Descontar Mercado libre: opción disponible en el menú, pero su procesamiento no está implementado en esta versión.
+   - 4. Guardar Descuentos: crea un backup en la carpeta Descuentos y limpia la columna de descuentos para el siguiente ciclo.
+   - 5. Salir.
+4. Revisar la pestaña No Encontrados si algunos códigos no existen en la plantilla.
+
+## Generación de ejecutable
+
+Para crear un ejecutable de producción:
+
+```bash
+poetry run pyinstaller --onefile app.py
+```
+
+El ejecutable se generará en la carpeta dist.
 
 ## Autor
 
-  Gregory Rodriguez - Trabajo inicial, Desarrollo y documentación
+Gregory Rodriguez
 
 - [@kniball4726](https://github.com/kniball4726)
