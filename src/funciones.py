@@ -26,8 +26,10 @@ def get_column_name(columns, candidates, default=None):
 
 
 def mover_archivos_a_descontados(source_folder, file_names, destino_folder="Descontados"):
-    """Mueve archivos procesados desde una carpeta fuente a una carpeta de salida."""
-    os.makedirs(destino_folder, exist_ok=True)
+    """Mueve archivos procesados desde una carpeta fuente a una carpeta de salida por fecha."""
+    fecha_hoy = datetime.datetime.now().strftime("%Y-%m-%d")
+    fecha_folder = os.path.join(destino_folder, fecha_hoy)
+    os.makedirs(fecha_folder, exist_ok=True)
 
     moved_files = []
     for file_name in file_names:
@@ -35,12 +37,12 @@ def mover_archivos_a_descontados(source_folder, file_names, destino_folder="Desc
         if not os.path.exists(source_path):
             continue
 
-        destination_path = os.path.join(destino_folder, file_name)
+        destination_path = os.path.join(fecha_folder, file_name)
         if os.path.exists(destination_path):
             base_name, extension = os.path.splitext(file_name)
             counter = 1
             while os.path.exists(destination_path):
-                destination_path = os.path.join(destino_folder, f"{base_name}_{counter}{extension}")
+                destination_path = os.path.join(fecha_folder, f"{base_name}_{counter}{extension}")
                 counter += 1
 
         shutil.move(source_path, destination_path)

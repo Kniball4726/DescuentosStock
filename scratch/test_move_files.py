@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import datetime
 
 from src.funciones import mover_archivos_a_descontados
 
@@ -23,7 +24,7 @@ class MoveFilesToDiscountedFolderTest(unittest.TestCase):
 
             self.assertEqual(len(moved_files), 1)
             self.assertFalse(os.path.exists(archivo))
-            self.assertTrue(os.path.exists(os.path.join(destino, "remito.pdf")))
+            self.assertTrue(os.path.exists(os.path.join(destino, datetime.date.today().strftime("%Y-%m-%d"), "remito.pdf")))
         finally:
             shutil.rmtree(temp_dir)
 
