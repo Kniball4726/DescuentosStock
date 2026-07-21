@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import shutil
 import pdfplumber
@@ -137,6 +138,131 @@ def clear_missing_products_sheet(rb, wb):
             sheet.write(0, col_idx, header)
         print(Fore.GREEN + "Pestaña 'No Encontrados' creada lista para el próximo ciclo.")
 
+
+def update_pedidos_descontados_section(rb, wb, entries):
+    """Escribe la lista de remitos y clientes en la sección 'PEDIDOS DESCONTADOS' del libro."""
+    sheet_name = 'Hoja1'
+    if sheet_name not in rb.sheet_names():
+        return
+
+    sheet = wb.get_sheet(rb.sheet_names().index(sheet_name))
+    r_sheet = rb.sheet_by_index(rb.sheet_names().index(sheet_name))
+    sheet.cell_overwrite_ok = True
+
+    section_row = None
+    for row_idx in range(r_sheet.nrows):
+        cell_value = str(r_sheet.cell_value(row_idx, 0)).strip().upper()
+        if cell_value == 'PEDIDOS DESCONTADOS':
+            section_row = row_idx
+            break
+
+    if section_row is None:
+        return
+
+    # La sección empieza en la fila del título y los datos van a partir de la siguiente fila.
+    start_row = section_row + 1
+
+    # Escribir encabezado de la sección con formato más legible.
+    sheet.write(section_row + 1, 0, 'REMITO')
+    sheet.write(section_row + 1, 2, 'CLIENTE')
+
+    # Reescribir las entradas existentes si la sección ya tenía filas previas.
+    existing_rows = []
+    for row_idx in range(section_row + 2, r_sheet.nrows):
+        remito_value = str(r_sheet.cell_value(row_idx, 0)).strip()
+        cliente_value = str(r_sheet.cell_value(row_idx, 2)).strip()
+        if remito_value or cliente_value:
+            existing_rows.append((row_idx, remito_value, cliente_value))
+
+    for row_idx, remito_value, cliente_value in existing_rows:
+        if remito_value.startswith('Remito: '):
+            remito_value = remito_value[len('Remito: '):]
+        if cliente_value.startswith('Cliente: '):
+            cliente_value = cliente_value[len('Cliente: '):]
+        sheet.write(row_idx, 0, remito_value)
+        sheet.write(row_idx, 2, cliente_value)
+
+    # Escribir las nuevas entradas al final de la sección.
+    next_row = section_row + 2
+    if existing_rows:
+        next_row = max(row_idx for row_idx, _, _ in existing_rows) + 1
+    for entry in entries:
+        remito = entry.get('remito') or ''
+        cliente = entry.get('cliente') or ''
+        sheet.write(next_row, 0, remito)
+        sheet.write(next_row, 2, cliente)
+        next_row += 1
+
+
+def extract_pedido_info_from_pdf(file_path):
+    """Extrae remito y cliente desde un PDF de pedidos mayoristas."""
+    remito = None
+    cliente = None
+
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text() or ''
+                if not remito:
+                    remito_match = re.search(r'Nº:\s*(\S+)', text)
+                    if remito_match:
+                        remito = remito_match.group(1).strip()
+                if not cliente:
+                    cliente_match = re.search(r'Cliente:\s*[^\n]*?\s*-\s*(.+)', text)
+                    if cliente_match:
+                        cliente = cliente_match.group(1).strip()
+                    else:
+                        cliente_match = re.search(r'Cliente:\s*(.+)', text)
+                        if cliente_match:
+                            cliente = cliente_match.group(1).strip()
+                if remito and cliente:
+                    break
+    except Exception:
+        return None
+
+    if remito or cliente:
+        return {'remito': remito or '', 'cliente': cliente or ''}
+    return None
+
+
+def extract_pedido_info_from_excel(file_path):
+    """Extrae remito y cliente desde un archivo Excel de canjes si están presentes en el nombre o contenido."""
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    remito = None
+    cliente = None
+
+    # Intentar extraer del nombre del archivo
+    for token in re.split(r'[^A-Za-z0-9]+', base_name):
+        if token and token.isdigit():
+            remito = token
+            break
+
+    # Si hay un prefijo 'CANJE' y un nombre después, usarlo como cliente
+    if base_name.upper().startswith('CANJE '):
+        cliente = base_name[6:].strip()
+
+    # Intentar extraer desde la primera hoja del excel
+    try:
+        df = pd.read_excel(file_path, engine='openpyxl')
+        if df.empty:
+            return {'remito': remito or '', 'cliente': cliente or ''}
+        for row in df.iloc[:, 0].astype(str).tolist():
+            if not row:
+                continue
+            if re.search(r'\bremito\b', row.lower()):
+                continue
+            if re.search(r'cliente', row.lower()):
+                continue
+            if re.search(r'\d{4}', row):
+                remito = row
+                break
+    except Exception:
+        pass
+
+    return {'remito': remito or '', 'cliente': cliente or ''}
+
+
 def descontarMayoristas():
     """Descuenta los archivos cargados en la carpeta Mayoristas"""
     bp()
@@ -212,6 +338,12 @@ def descontarMayoristas():
         return
 
     print(Fore.GREEN + f"\nExtracción completa. Se encontraron {len(all_products)} productos distintos.")
+
+    pedido_entries = []
+    for file_name in pdf_files:
+        info = extract_pedido_info_from_pdf(os.path.join(folder, file_name))
+        if info:
+            pedido_entries.append({'remito': info.get('remito', ''), 'cliente': info.get('cliente', '')})
 
     # 2. Cargar la plantilla con pandas para mapear índices
     print(Fore.WHITE + f"Cargando {plantilla_path}...")
@@ -292,6 +424,9 @@ def descontarMayoristas():
             })
 
     # 4. No actualizar la fila de total en la plantilla
+
+    # Actualizar sección 'PEDIDOS DESCONTADOS' en la plantilla
+    update_pedidos_descontados_section(rb, wb, pedido_entries)
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)
@@ -416,6 +551,7 @@ def descontarCanjes():
     # 2. Procesar cada archivo de Canjes
     canjes_products = {}  # code_int -> accumulated_qty
     missing_products = []  # list of dicts: {'code': code, 'name': name, 'qty': qty, 'file': file_name}
+    pedido_entries = []
     
     for file_name in excel_files:
         file_path = os.path.join(folder, file_name)
@@ -458,6 +594,10 @@ def descontarCanjes():
                         'qty': qty,
                         'file': file_name
                     })
+
+            pedido_info = extract_pedido_info_from_excel(os.path.join(folder, file_name))
+            if pedido_info:
+                pedido_entries.append({'remito': pedido_info.get('remito', ''), 'cliente': pedido_info.get('cliente', '')})
         except Exception as e:
             print(Fore.RED + f"  Error al leer {file_name}: {e}")
 
@@ -496,6 +636,9 @@ def descontarCanjes():
                 pass
 
     # 4. No actualizar la fila de total en la plantilla
+
+    # Actualizar sección 'PEDIDOS DESCONTADOS' en la plantilla
+    update_pedidos_descontados_section(rb, wb, pedido_entries)
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)
