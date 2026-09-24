@@ -1,10 +1,22 @@
 import os
+import sys
 import time
 import traceback
-from src.init import main as iniciarAplicacion
+
+# Configurar el directorio raíz del proyecto en sys.path para prevenir errores de importación (ModuleNotFoundError)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from colorama import Fore, Style, init
 init(autoreset=True)
-from src.helpers import borrarPantallas as bp
+
+try:
+    from src.init import main as iniciarAplicacion
+    from src.helpers import borrarPantallas as bp
+except ImportError:
+    from init import main as iniciarAplicacion
+    from helpers import borrarPantallas as bp
 
 CARPETAS_REQUERIDAS = ["Canjes", "Descuentos", "Descontados", "Mayoristas", "Mercado Libre"]
 
@@ -27,5 +39,3 @@ if __name__ == "__main__":
         except Exception:
             pass
         print(Fore.RED + Style.BRIGHT + "Se produjo un error. Revisa el archivo error.log en la carpeta del ejecutable.")
-
-

@@ -1,8 +1,18 @@
-from .helpers import borrarPantallas as bp
-from .funciones import *
+import sys
 import time
 from colorama import Fore, Style, init
 init(autoreset=True)
+
+try:
+    from .helpers import borrarPantallas as bp
+    from .funciones import descontarMayoristas, descontarCanjes, descontarMercado, guardarDescuentos
+except ImportError:
+    try:
+        from src.helpers import borrarPantallas as bp
+        from src.funciones import descontarMayoristas, descontarCanjes, descontarMercado, guardarDescuentos
+    except ImportError:
+        from helpers import borrarPantallas as bp
+        from funciones import descontarMayoristas, descontarCanjes, descontarMercado, guardarDescuentos
 
 def main():
     opcion = ""
@@ -29,8 +39,10 @@ def main():
                 case "5":
                     print(Fore.RED + "\nsaliendo . . .")
                     time.sleep(2)
-                    exit()
+                    sys.exit(0)
     except KeyboardInterrupt:
         print(Fore.RED +"\n\nSaliendo de la aplicación...")
+    except SystemExit:
+        pass
     except Exception as e:
         print(f"\nOcurrió un error: {e}")

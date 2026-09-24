@@ -2,13 +2,21 @@ import os
 import re
 import time
 import shutil
+from copy import copy as copy_style
 import pdfplumber
 import pandas as pd
 import xlrd
+import xlwt
 import datetime
 from xlutils.copy import copy
 from colorama import Fore, Style
-from .helpers import borrarPantallas as bp
+try:
+    from .helpers import borrarPantallas as bp
+except ImportError:
+    try:
+        from src.helpers import borrarPantallas as bp
+    except ImportError:
+        from helpers import borrarPantallas as bp
 
 
 def normalize_header(value):
@@ -70,6 +78,52 @@ def set_cell_value_preserve_format(out_sheet, row, col, value):
         new_cell = new_row_obj._Row__cells.get(col)
         if new_cell:
             new_cell.xf_idx = previous_cell.xf_idx
+
+
+def protect_discount_column(wb, sheet, row_count, column_count, discount_col):
+    """Protege solo la columna de descuentos y deja editables las demás celdas usadas."""
+    styles = wb._Workbook__styles
+    style_cache = {}
+
+    def get_style_index(xf_idx, locked):
+        cache_key = (xf_idx, locked)
+        if cache_key in style_cache:
+            return style_cache[cache_key]
+
+        style_tuple = next(
+            (style for style, index in styles._xf_id2x.items() if index == xf_idx),
+            styles._default_xf,
+        )
+        font_idx, num_format_idx, alignment, borders, pattern, protection = style_tuple
+        style = xlwt.XFStyle()
+        style.font = copy_style(styles._font_x2id[font_idx])
+        style.num_format_str = next(
+            (format_string for format_string, index in styles._num_formats.items()
+             if index == num_format_idx),
+            'General',
+        )
+        style.alignment = copy_style(alignment)
+        style.borders = copy_style(borders)
+        style.pattern = copy_style(pattern)
+        style.protection = copy_style(protection)
+        style.protection.cell_locked = int(locked)
+        style_index = styles.add(style)
+        style_cache[cache_key] = style_index
+        return style_index
+
+    unlocked_default_style = xlwt.XFStyle()
+    unlocked_default_style.protection.cell_locked = 0
+    for row_idx in range(row_count):
+        row_obj = sheet._Worksheet__rows.get(row_idx)
+        for col_idx in range(column_count):
+            cell = row_obj._Row__cells.get(col_idx) if row_obj else None
+            if cell is None:
+                sheet.write(row_idx, col_idx, '', unlocked_default_style)
+                row_obj = sheet._Worksheet__rows.get(row_idx)
+                cell = row_obj._Row__cells.get(col_idx)
+            cell.xf_idx = get_style_index(cell.xf_idx, col_idx == discount_col)
+
+    sheet.protect = True
 
 def update_missing_products_sheet(rb, wb, missing_products):
     """
@@ -139,14 +193,18 @@ def clear_missing_products_sheet(rb, wb):
         print(Fore.GREEN + "Pestaña 'No Encontrados' creada lista para el próximo ciclo.")
 
 
-def update_pedidos_descontados_section(rb, wb, entries):
-    """Escribe la lista de remitos y clientes en la sección 'PEDIDOS DESCONTADOS' del libro."""
+def clear_pedidos_descontados_section(rb, wb):
+    """
+    Limpia las filas de datos registradas en la sección 'PEDIDOS DESCONTADOS'
+    después de realizar el backup en guardarDescuentos.
+    """
     sheet_name = 'Hoja1'
     if sheet_name not in rb.sheet_names():
         return
 
-    sheet = wb.get_sheet(rb.sheet_names().index(sheet_name))
-    r_sheet = rb.sheet_by_index(rb.sheet_names().index(sheet_name))
+    sheet_index = rb.sheet_names().index(sheet_name)
+    sheet = wb.get_sheet(sheet_index)
+    r_sheet = rb.sheet_by_index(sheet_index)
     sheet.cell_overwrite_ok = True
 
     section_row = None
@@ -159,38 +217,86 @@ def update_pedidos_descontados_section(rb, wb, entries):
     if section_row is None:
         return
 
-    # La sección empieza en la fila del título y los datos van a partir de la siguiente fila.
-    start_row = section_row + 1
-
-    # Escribir encabezado de la sección con formato más legible.
-    sheet.write(section_row + 1, 0, 'REMITO')
-    sheet.write(section_row + 1, 2, 'CLIENTE')
-
-    # Reescribir las entradas existentes si la sección ya tenía filas previas.
-    existing_rows = []
+    rows_cleared = 0
     for row_idx in range(section_row + 2, r_sheet.nrows):
-        remito_value = str(r_sheet.cell_value(row_idx, 0)).strip()
-        cliente_value = str(r_sheet.cell_value(row_idx, 2)).strip()
-        if remito_value or cliente_value:
-            existing_rows.append((row_idx, remito_value, cliente_value))
+        has_content = False
+        for col_idx in range(r_sheet.ncols):
+            if str(r_sheet.cell_value(row_idx, col_idx)).strip():
+                has_content = True
+            sheet.write(row_idx, col_idx, "")
+        if has_content:
+            rows_cleared += 1
 
-    for row_idx, remito_value, cliente_value in existing_rows:
-        if remito_value.startswith('Remito: '):
-            remito_value = remito_value[len('Remito: '):]
-        if cliente_value.startswith('Cliente: '):
-            cliente_value = cliente_value[len('Cliente: '):]
-        sheet.write(row_idx, 0, remito_value)
-        sheet.write(row_idx, 2, cliente_value)
+    print(Fore.GREEN + f"Sección 'PEDIDOS DESCONTADOS' limpiada correctamente ({rows_cleared} registros eliminados).")
 
-    # Escribir las nuevas entradas al final de la sección.
-    next_row = section_row + 2
-    if existing_rows:
-        next_row = max(row_idx for row_idx, _, _ in existing_rows) + 1
+
+def update_pedidos_descontados_section(rb, wb, entries):
+    """Escribe la lista de clientes, remitos y tipo en la sección 'PEDIDOS DESCONTADOS' del libro."""
+    if not entries:
+        return
+
+    sheet_name = 'Hoja1'
+    if sheet_name not in rb.sheet_names():
+        return
+
+    sheet_index = rb.sheet_names().index(sheet_name)
+    sheet = wb.get_sheet(sheet_index)
+    r_sheet = rb.sheet_by_index(sheet_index)
+    sheet.cell_overwrite_ok = True
+
+    section_row = None
+    for row_idx in range(r_sheet.nrows):
+        cell_value = str(r_sheet.cell_value(row_idx, 0)).strip().upper()
+        if cell_value == 'PEDIDOS DESCONTADOS':
+            section_row = row_idx
+            break
+
+    if section_row is None:
+        section_row = r_sheet.nrows + 1
+        sheet.write(section_row, 0, 'PEDIDOS DESCONTADOS')
+
+    # Encabezados según la estructura original de Plantilla.xlsx
+    sheet.write(section_row + 1, 0, 'Cliente')
+    sheet.write(section_row + 1, 3, 'Remito')
+    sheet.write(section_row + 1, 4, 'Tipo')
+
+    existing_entries = []
+    for row_idx in range(section_row + 2, r_sheet.nrows):
+        c0 = str(r_sheet.cell_value(row_idx, 0)).strip()
+        c3 = str(r_sheet.cell_value(row_idx, 3)).strip()
+        c4 = str(r_sheet.cell_value(row_idx, 4)).strip()
+        c2 = str(r_sheet.cell_value(row_idx, 2)).strip()
+
+        cliente_val = c0
+        remito_val = c3
+        tipo_val = c4
+
+        if not cliente_val and not remito_val and c2:
+            remito_val = c0
+            cliente_val = c2
+
+        if cliente_val or remito_val or tipo_val:
+            if cliente_val.upper() != 'CLIENTE' and remito_val.upper() != 'REMITO':
+                existing_entries.append({
+                    'cliente': cliente_val,
+                    'remito': remito_val,
+                    'tipo': tipo_val
+                })
+
+    combined = list(existing_entries)
     for entry in entries:
-        remito = entry.get('remito') or ''
-        cliente = entry.get('cliente') or ''
-        sheet.write(next_row, 0, remito)
-        sheet.write(next_row, 2, cliente)
+        c_val = (entry.get('cliente') or '').strip()
+        r_val = (entry.get('remito') or '').strip()
+        t_val = (entry.get('tipo') or '').strip()
+        item = {'cliente': c_val, 'remito': r_val, 'tipo': t_val}
+        if item not in combined:
+            combined.append(item)
+
+    next_row = section_row + 2
+    for item in combined:
+        sheet.write(next_row, 0, item['cliente'])
+        sheet.write(next_row, 3, item['remito'])
+        sheet.write(next_row, 4, item['tipo'])
         next_row += 1
 
 
@@ -198,6 +304,7 @@ def extract_pedido_info_from_pdf(file_path):
     """Extrae remito y cliente desde un PDF de pedidos mayoristas."""
     remito = None
     cliente = None
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
 
     try:
         with pdfplumber.open(file_path) as pdf:
@@ -205,6 +312,8 @@ def extract_pedido_info_from_pdf(file_path):
                 text = page.extract_text() or ''
                 if not remito:
                     remito_match = re.search(r'Nº:\s*(\S+)', text)
+                    if not remito_match:
+                        remito_match = re.search(r'Remito\s*Nº?:\s*(\S+)', text, re.IGNORECASE)
                     if remito_match:
                         remito = remito_match.group(1).strip()
                 if not cliente:
@@ -218,11 +327,12 @@ def extract_pedido_info_from_pdf(file_path):
                 if remito and cliente:
                     break
     except Exception:
-        return None
+        pass
 
-    if remito or cliente:
-        return {'remito': remito or '', 'cliente': cliente or ''}
-    return None
+    if not remito:
+        remito = base_name
+
+    return {'remito': remito, 'cliente': cliente or ''}
 
 
 def extract_pedido_info_from_excel(file_path):
@@ -232,35 +342,34 @@ def extract_pedido_info_from_excel(file_path):
     remito = None
     cliente = None
 
-    # Intentar extraer del nombre del archivo
+    if base_name.upper().startswith('CANJE '):
+        cliente = base_name[6:].strip()
+    elif 'CANJE' in base_name.upper():
+        cliente = re.sub(r'(?i)canje', '', base_name).strip()
+    else:
+        cliente = base_name
+
     for token in re.split(r'[^A-Za-z0-9]+', base_name):
-        if token and token.isdigit():
+        if token and token.isdigit() and len(token) >= 4:
             remito = token
             break
 
-    # Si hay un prefijo 'CANJE' y un nombre después, usarlo como cliente
-    if base_name.upper().startswith('CANJE '):
-        cliente = base_name[6:].strip()
-
-    # Intentar extraer desde la primera hoja del excel
     try:
         df = pd.read_excel(file_path, engine='openpyxl')
-        if df.empty:
-            return {'remito': remito or '', 'cliente': cliente or ''}
-        for row in df.iloc[:, 0].astype(str).tolist():
-            if not row:
-                continue
-            if re.search(r'\bremito\b', row.lower()):
-                continue
-            if re.search(r'cliente', row.lower()):
-                continue
-            if re.search(r'\d{4}', row):
-                remito = row
-                break
+        if not df.empty:
+            for row in df.iloc[:, 0].astype(str).tolist():
+                if not row or row.lower() == 'nan':
+                    continue
+                if 'remito' in row.lower() or 'dni' in row.lower():
+                    remito = row
+                    break
     except Exception:
         pass
 
-    return {'remito': remito or '', 'cliente': cliente or ''}
+    if not remito:
+        remito = "CANJE"
+
+    return {'remito': remito, 'cliente': cliente or base_name}
 
 
 def descontarMayoristas():
@@ -343,7 +452,11 @@ def descontarMayoristas():
     for file_name in pdf_files:
         info = extract_pedido_info_from_pdf(os.path.join(folder, file_name))
         if info:
-            pedido_entries.append({'remito': info.get('remito', ''), 'cliente': info.get('cliente', '')})
+            pedido_entries.append({
+                'remito': info.get('remito', ''),
+                'cliente': info.get('cliente', ''),
+                'tipo': 'Mayoristas'
+            })
 
     # 2. Cargar la plantilla con pandas para mapear índices
     print(Fore.WHITE + f"Cargando {plantilla_path}...")
@@ -400,6 +513,10 @@ def descontarMayoristas():
     for idx in range(len(df_plantilla)):
         set_cell_value_preserve_format(sheet, idx + 1, col_descuento, None)
 
+    # Escribir la fecha del descuento debajo del encabezado 'Descuento' (Fila 1) con formato dd/mm/aa
+    fecha_descuento = datetime.datetime.now().strftime("%d/%m/%y")
+    set_cell_value_preserve_format(sheet, 1, col_descuento, fecha_descuento)
+
     # 3. Emparejar y actualizar
     descuentos_actualizados = 0
     total_descuento_unidades = 0
@@ -430,6 +547,8 @@ def descontarMayoristas():
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)
+
+    protect_discount_column(wb, sheet, r_sheet.nrows, r_sheet.ncols, col_descuento)
 
     # 5. Guardar archivo preservando el formato original
     print(Fore.WHITE + "Guardando cambios en Plantilla.xlsx...")
@@ -597,7 +716,11 @@ def descontarCanjes():
 
             pedido_info = extract_pedido_info_from_excel(os.path.join(folder, file_name))
             if pedido_info:
-                pedido_entries.append({'remito': pedido_info.get('remito', ''), 'cliente': pedido_info.get('cliente', '')})
+                pedido_entries.append({
+                    'remito': pedido_info.get('remito', ''),
+                    'cliente': pedido_info.get('cliente', ''),
+                    'tipo': 'Canjes'
+                })
         except Exception as e:
             print(Fore.RED + f"  Error al leer {file_name}: {e}")
 
@@ -605,6 +728,10 @@ def descontarCanjes():
         print(Fore.YELLOW + "No se extrajo ningún producto o cantidad de los archivos de canje.")
         input(Fore.YELLOW + "\nPresione Enter para volver al menú...")
         return
+
+    # Escribir la fecha del descuento debajo del encabezado 'Descuento' (Fila 1) con formato dd/mm/aa
+    fecha_descuento = datetime.datetime.now().strftime("%d/%m/%y")
+    set_cell_value_preserve_format(sheet, 1, col_descuento, fecha_descuento)
 
     # 3. Aplicar las sumas a la plantilla acumulando sobre el valor existente
     descuentos_actualizados = 0
@@ -642,6 +769,8 @@ def descontarCanjes():
 
     # Actualizar pestaña 'No Encontrados'
     update_missing_products_sheet(rb, wb, missing_products)
+
+    protect_discount_column(wb, sheet, r_sheet.nrows, r_sheet.ncols, col_descuento)
 
     # 5. Guardar archivo preservando el formato original
     print(Fore.WHITE + "Guardando cambios en Plantilla.xlsx...")
@@ -727,6 +856,29 @@ def guardarDescuentos():
         print(Fore.RED + f"Error al copiar el archivo: {e}")
         input(Fore.YELLOW + "\nPresione Enter para volver al menú...")
         return
+    # 1b. Escribir la fecha de descuento en la copia de backup (fila 1, columna Descuento) con formato dd/mm/aa
+    try:
+        rb_dest = xlrd.open_workbook(destino_path, formatting_info=True)
+        wb_dest = copy(rb_dest)
+        sheet_dest = wb_dest.get_sheet(0)
+        r_sheet_dest = rb_dest.sheet_by_index(0)
+
+        headers_dest = [str(val).strip().upper() for val in r_sheet_dest.row_values(0)]
+        col_desc_dest = headers_dest.index('DESCUENTO') if 'DESCUENTO' in headers_dest else 3
+
+        fecha_backup = datetime.datetime.now().strftime("%d/%m/%y")
+        set_cell_value_preserve_format(sheet_dest, 1, col_desc_dest, fecha_backup)
+        protect_discount_column(
+            wb_dest,
+            sheet_dest,
+            r_sheet_dest.nrows,
+            r_sheet_dest.ncols,
+            col_desc_dest,
+        )
+        wb_dest.save(destino_path)
+        print(Fore.GREEN + f"Fecha de descuento '{fecha_backup}' registrada en el backup.")
+    except Exception as e:
+        print(Fore.YELLOW + f"Advertencia: No se pudo escribir la fecha en el backup: {e}")
 
     # 2. Limpiar la columna 'Descuento' en la Plantilla original preservando el formato
     print(Fore.WHITE + "\nLimpiando columna 'Descuento' en Plantilla.xlsx...")
@@ -749,6 +901,12 @@ def guardarDescuentos():
         for row_idx in range(1, r_sheet.nrows):
             set_cell_value_preserve_format(sheet, row_idx, col_descuento, None)
             celdas_limpiadas += 1
+
+        protect_discount_column(wb, sheet, r_sheet.nrows, r_sheet.ncols, col_descuento)
+
+        # Limpiar la sección 'PEDIDOS DESCONTADOS' para el nuevo ciclo
+        print(Fore.WHITE + "Limpiando sección 'PEDIDOS DESCONTADOS'...")
+        clear_pedidos_descontados_section(rb, wb)
 
         # Limpiar también la pestaña 'No Encontrados' para el nuevo ciclo
         print(Fore.WHITE + "Limpiando pestaña 'No Encontrados'...")
