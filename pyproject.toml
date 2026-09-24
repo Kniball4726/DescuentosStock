@@ -15,7 +15,8 @@ dependencies = [
     "pdfplumber",
     "colorama",
     "xlrd",
-    "xlutils (>=2.0.0,<3.0.0)"
+    "xlutils (>=2.0.0,<3.0.0)",
+    "xlwt"
 ]
 
 

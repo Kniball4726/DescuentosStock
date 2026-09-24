@@ -1,6 +1,6 @@
 # DescuentosStock
 
-Sistema de escritorio para actualizar descuentos en una plantilla de Excel a partir de pedidos mayoristas, canjes y la opción de Mercado Libre desde un menú interactivo.
+Sistema de escritorio para actualizar descuentos en una plantilla de Excel a partir de pedidos mayoristas y canjes, con una opción reservada para Mercado Libre desde un menú interactivo.
 
 ## ¿Qué hace el sistema? 🚀
 
@@ -8,6 +8,7 @@ El programa permite:
 
 - leer archivos de pedidos desde carpetas específicas;
 - actualizar la columna de descuentos de una plantilla llamada Plantilla.xlsx;
+- proteger la columna de descuentos después de procesar los pedidos;
 - mover los archivos ya procesados a la carpeta Descontados por fecha;
 - generar respaldos en la carpeta Descuentos;
 - registrar en una pestaña llamada No Encontrados los productos que no existen en la plantilla.
@@ -29,6 +30,7 @@ El proyecto utiliza:
 - colorama
 - xlrd
 - xlutils
+- xlwt
 
 ## Instalación local
 
@@ -82,7 +84,7 @@ Además, el proceso espera los siguientes archivos:
 3. Elegir una opción del menú:
    - 1. Descontar Mayoristas: procesa los PDFs y actualiza los descuentos en la plantilla.
    - 2. Descontar Canjes: procesa los archivos Excel de canjes y suma las cantidades sobre la plantilla.
-   - 3. Descontar Mercado libre: opción disponible en el menú, pero su procesamiento no está implementado en esta versión.
+   - 3. Descontar Mercado Libre: opción disponible en el menú, pero su procesamiento no está implementado en esta versión.
    - 4. Guardar Descuentos: crea un backup en la carpeta Descuentos y limpia la columna de descuentos para el siguiente ciclo.
    - 5. Salir.
 4. Revisar la pestaña No Encontrados si algunos códigos no existen en la plantilla.
